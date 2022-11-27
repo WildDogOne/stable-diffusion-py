@@ -1,0 +1,3 @@
+/steps/*
+.ipynb_checkpoints/
+.idea
