@@ -130,10 +130,13 @@ ui-tests/playwright-report
 # RTC
 .jupyter_ystore.db
 
-/steps/*
+/data/*
 .ipynb_checkpoints/
 .idea
 samplers
 creds.py
 /dreambooth
+/dreambooth/*
 /env/
+/config.py
+/src/
