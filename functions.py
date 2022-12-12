@@ -1,4 +1,12 @@
-def generate_image(payload, outfile):
+import base64
+import io
+from pprint import pprint
+from functions import *
+
+import requests
+from PIL import Image, PngImagePlugin
+
+def generate_image(url, payload, outfile):
     """
     This function generates images and displays them inline in the notebook
     """
@@ -15,7 +23,7 @@ def generate_image(payload, outfile):
         display(image.resize((int(image.width * scale), int(image.height * scale))))
 
 
-def set_model(model=None):
+def set_model(url, model=None):
     """
     This function sets the model to something provided
     If nothing is provided, will just return true
@@ -36,7 +44,7 @@ def set_model(model=None):
         return True
 
 
-def generate_images(samplers, payload, model=None, artists=None, keyword_test=None):
+def generate_images(url, samplers, payload, model=None, artists=None, keyword_test=None):
     """
     This function deals with the iterations of images
     Model: None = Model will not be changed
@@ -51,7 +59,7 @@ def generate_images(samplers, payload, model=None, artists=None, keyword_test=No
         model_name = model
         pictures = "n/a"
         training_steps = "n/a"
-    if set_model(model):
+    if set_model(url, model):
         for sampler in samplers:
             if sampler == "LMS Karras" and steps >= 90:
                 print("Skipping LMS Karras, only noise from Step 90+")
@@ -59,19 +67,19 @@ def generate_images(samplers, payload, model=None, artists=None, keyword_test=No
                 if artists:
                     for artist in artists:
                         payload["prompt"] = prompt + ", by " + artist
-                        generate_image(payload, f"{payload['seed']}_{sampler}")
+                        generate_image(url, payload, f"{payload['seed']}_{sampler}")
                         print(
                             f"Artist: '{artist}' Model Name: '{model_name}' Picture Count: {pictures} Training Steps: {training_steps}\nSampler: '{sampler}' Steps: {payload['steps']} Seed: {payload['seed']}")
                 elif keyword_test:
                     keywords = payload["prompt"].split(", ")
                     for keyword in keywords:
                         payload["prompt"] = keyword_test + ", " + keyword
-                        generate_image(payload, f"{payload['seed']}_{sampler}")
+                        generate_image(url, payload, f"{payload['seed']}_{sampler}")
                         print(
                             f"Keyword: '{keyword}' Model Name: '{model_name}' Picture Count: {pictures} Training Steps: {training_steps}\nSampler: '{sampler}' Steps: {payload['steps']} Seed: {payload['seed']}")
                 else:
                     payload["sampler_name"] = sampler
-                    generate_image(payload, f"{payload['seed']}_{sampler}")
+                    generate_image(url, payload, f"{payload['seed']}_{sampler}")
                     print(
                         f"Model Name: '{model_name}' Picture Count: {pictures} Training Steps: {training_steps}\nSampler: '{sampler}' Steps: {payload['steps']} Seed: {payload['seed']}")
         print("done")
