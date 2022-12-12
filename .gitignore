@@ -135,9 +135,9 @@ ui-tests/playwright-report
 .idea
 samplers
 creds.py
-/dreambooth
-/dreambooth/*
 /env/
 /config.py
 /src/
 /Multi Check Custom.ipynb
+/dreambooth_nbs/OC Test.ipynb
+/dreambooth_nbs/
