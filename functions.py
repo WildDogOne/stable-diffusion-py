@@ -1,10 +1,10 @@
-import base64
-import io
-from pprint import pprint
-from functions import *
+import re
 
 import requests
-from PIL import Image, PngImagePlugin
+from PIL import Image
+
+from functions import *
+
 
 def generate_image(url, payload, outfile):
     """
@@ -16,8 +16,7 @@ def generate_image(url, payload, outfile):
 
     for i in r['images']:
         image = Image.open(io.BytesIO(base64.b64decode(i.split(",", 1)[0])))
-        from pprint import pprint
-        #from IPython import display
+        # from IPython import display
         scale = 0.5
         scale = 1
         display(image.resize((int(image.width * scale), int(image.height * scale))))
@@ -53,9 +52,13 @@ def generate_images(url, samplers, payload, model=None, artists=None, keyword_te
     """
     regexpattern = r"(.*)?_(\d+)?_training_images_(\d+)?_"
     prompt = payload["prompt"]
-    try:
-        model_name, pictures, training_steps = re.search(regexpattern, model).groups()
-    except:
+
+    x = re.search(regexpattern, model)
+    if x:
+        x = x.groups()
+        if len(x) == 3:
+            model_name, pictures, training_steps = x
+    if "model_name" not in locals():
         model_name = model
         pictures = "n/a"
         training_steps = "n/a"
@@ -83,3 +86,67 @@ def generate_images(url, samplers, payload, model=None, artists=None, keyword_te
                     print(
                         f"Model Name: '{model_name}' Picture Count: {pictures} Training Steps: {training_steps}\nSampler: '{sampler}' Steps: {payload['steps']} Seed: {payload['seed']}")
         print("done")
+
+
+def initialise(seed, prompt, negative_prompt, steps, samplers=None):
+    """
+    Function generates a default payload, and sets default sampler list if none is provided
+    """
+    if seed == -1:
+        import random
+        seed = random.randint(1000000000, 10000000000)
+    payload = {
+        "enable_hr": False,
+        # "denoising_strength": 0,
+        # "firstphase_width": 0,
+        # "firstphase_height": 0,
+        "prompt": prompt,
+        "negative_prompt": negative_prompt,
+        # "styles": [
+        #  "Good Baseline NSFW",
+        #  "Good Baseline NSFW"
+        # ],
+        "seed": seed,
+        # "subseed": -1,
+        # "subseed_strength": 0,
+        # "seed_resize_from_h": -1,
+        # "seed_resize_from_w": -1,
+        # "sampler_name": "string",
+        "batch_size": 1,
+        "n_iter": 1,
+        "steps": steps,
+        "cfg_scale": 7,
+        "width": 512,
+        "height": 512,
+        "restore_faces": False,
+        "tiling": False,
+        # "eta": 0,
+        # "s_churn": 0,
+        # "s_tmax": 0,
+        # "s_tmin": 0,
+        # "s_noise": 1,
+        # "override_settings": {},
+        "sampler_index": "Euler a"
+    }
+
+    if not samplers:
+        samplers = [
+            "Euler a",
+            "Euler",
+            "LMS",
+            "Heun",
+            "LMS Karras",
+            "DPM fast",
+            "DPM adaptive",
+            "DPM2",
+            "DPM2 a",
+            "DPM2 Karras",
+            "DPM2 a Karras",
+            "DPM++ 2S a Karras",
+            "DPM++ 2M Karras",
+            "DPM++ 2S a",
+            "DPM++ 2M",
+            "DDIM",
+            "PLMS"
+        ]
+    return payload, samplers
