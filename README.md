@@ -9,7 +9,7 @@ You will also need a working installation of jupyter lab
 #### Multi Check
 
 The jupyternotebook Multi Check is mainly used for testing stable diffusion prompts and models.
-I mainly use this to check artist styles and the effect of single prompts against SD.   
+I mainly use this to check artist styles and the effect of single prompts against SD.
 
 #### step and sampler
 
