@@ -2,6 +2,7 @@ import re
 
 import requests
 from PIL import Image
+from pprint import pprint
 
 from functions import *
 
@@ -58,11 +59,13 @@ def generate_image_new(url, payload=None, outfile=None, subfolder=None, display_
         response2 = requests.post(url=f'{url}/sdapi/v1/png-info', json=png_payload)
 
         pnginfo = PngImagePlugin.PngInfo()
+
         pnginfo.add_text("parameters", response2.json().get("info"))
         if save_file:
             output_file_to_disk(subfolder, save_file_folder, image, pnginfo, outfile)
         if display_image:
             display_image_in_notebook(image, display_image_scale)
+        # pprint(response2.json())
 
 
 def set_model(url, model=None):
@@ -86,8 +89,16 @@ def set_model(url, model=None):
         return True
 
 
-def generate_images(url, samplers, payload, model=None, artists=None, keyword_test_keyword=None, subfolder=None,
-                    display_image=True, save_file=False, save_file_folder=None, display_image_scale=0.5):
+def generate_images(url, samplers, payload,
+                    model=None,
+                    artists=None,
+                    keyword_test_keyword=None,
+                    subfolder=None,
+                    display_image=True,
+                    save_file=False,
+                    save_file_folder=None,
+                    display_image_scale=0.5,
+                    multi_artist_check=0):
     """
     This function deals with the iterations of images
     Model: None = Model will not be changed
@@ -113,14 +124,27 @@ def generate_images(url, samplers, payload, model=None, artists=None, keyword_te
             else:
                 if artists:
                     for artist in artists:
-                        payload["prompt"] = prompt + ", by " + artist
-                        # generate_image(url, payload, f"{payload['seed']}_{sampler}")
-                        generate_image_new(url, payload, display_image_scale=display_image_scale, save_file=save_file,
-                                           subfolder=subfolder, display_image=display_image,
-                                           save_file_folder=save_file_folder,
-                                           outfile=f"artist-{artist}_model-{model}_sampler-{sampler}_steps-{payload['steps']}_seed-{payload['seed']}")
-                        print(
-                            f"Artist: '{artist}' Model Name: '{model_name}' Picture Count: {pictures} Training Steps: {training_steps}\nSampler: '{sampler}' Steps: {payload['steps']} Seed: {payload['seed']}")
+                        if multi_artist_check == 1:
+                            for second_artist in artists:
+                                if artist != second_artist:
+                                    payload["prompt"] = prompt + ", by " + artist + ", by " + second_artist
+                                    generate_image_new(url, payload, display_image_scale=display_image_scale,
+                                                       save_file=save_file,
+                                                       subfolder=subfolder, display_image=display_image,
+                                                       save_file_folder=save_file_folder,
+                                                       outfile=f"artist-{artist}_second-artist-{second_artist}_model-{model}_sampler-{sampler}_steps-{payload['steps']}_seed-{payload['seed']}")
+                                    print(
+                                        f"Artist: '{artist}' Second Artist: '{second_artist}' Model Name: '{model_name}' Picture Count: {pictures} Training Steps: {training_steps}\nSampler: '{sampler}' Steps: {payload['steps']} Seed: {payload['seed']}")
+                        else:
+                            payload["prompt"] = prompt + ", by " + artist
+                            # generate_image(url, payload, f"{payload['seed']}_{sampler}")
+                            generate_image_new(url, payload, display_image_scale=display_image_scale,
+                                               save_file=save_file,
+                                               subfolder=subfolder, display_image=display_image,
+                                               save_file_folder=save_file_folder,
+                                               outfile=f"artist-{artist}_model-{model}_sampler-{sampler}_steps-{payload['steps']}_seed-{payload['seed']}")
+                            print(
+                                f"Artist: '{artist}' Model Name: '{model_name}' Picture Count: {pictures} Training Steps: {training_steps}\nSampler: '{sampler}' Steps: {payload['steps']} Seed: {payload['seed']}")
                 elif keyword_test_keyword:
                     keywords = payload["prompt"].split(", ")
                     for keyword in keywords:
