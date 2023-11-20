@@ -39,7 +39,7 @@ def output_file_to_disk(subfolder, save_file_folder, image, pnginfo, outfile):
 
 
 def generate_image_new(url, payload=None, outfile=None, subfolder=None, display_image=True, save_file=False,
-                       save_file_folder=None, display_image_scale=0.5):
+                       save_file_folder=None, display_image_scale=0.5, debug=False):
     import io
     import base64
     from PIL import Image, PngImagePlugin
@@ -65,7 +65,8 @@ def generate_image_new(url, payload=None, outfile=None, subfolder=None, display_
             output_file_to_disk(subfolder, save_file_folder, image, pnginfo, outfile)
         if display_image:
             display_image_in_notebook(image, display_image_scale)
-        # pprint(response2.json())
+        if debug:
+            print(response2.json().get("info"))
 
 
 def set_model(url, model=None):
@@ -167,6 +168,57 @@ def generate_images(url, samplers, payload,
                         f"Model Name: '{model_name}' Picture Count: {pictures} Training Steps: {training_steps}\nSampler: '{sampler}' Steps: {payload['steps']} Seed: {payload['seed']}")
         print("done")
 
+
+def multi_artist_check(url, samplers, payload, artist_count=2,
+                       model=None,
+                       artists=None,
+                       subfolder=None,
+                       display_image=True,
+                       save_file=False,
+                       save_file_folder=None,
+                       display_image_scale=0.5,
+                       debug = False):
+    regexpattern = r"(.*)?_(\d+)?_training_images_(\d+)?_"
+    prompt = payload["prompt"]
+    combos_done = {}
+
+    x = re.search(regexpattern, model)
+    if x:
+        x = x.groups()
+        if len(x) == 3:
+            model_name, pictures, training_steps = x
+    if "model_name" not in locals():
+        model_name = model
+        pictures = "n/a"
+        training_steps = "n/a"
+
+    if set_model(url, model):
+        for sampler in samplers:
+            if sampler == "LMS Karras" and payload["steps"] >= 90:
+                print("Skipping LMS Karras, only noise from Step 90+")
+            else:
+                for artist in artists:
+                    if artist not in combos_done:
+                        combos_done[artist] = []
+                    for second_artist in artists:
+                        if second_artist not in combos_done:
+                            combos_done[second_artist] = []
+                        if second_artist not in combos_done[artist] and artist not in combos_done[second_artist]:
+                            if artist != second_artist:
+                                combos_done[artist].append(second_artist)
+                                combos_done[second_artist].append(artist)
+                                payload["prompt"] = prompt + ", by " + artist + ", by " + second_artist
+                                outfile = f"artist-{artist}_second-artist-{second_artist}_model-{model}_sampler-{sampler}_steps-{payload['steps']}_seed-{payload['seed']}"
+                                generate_image_new(url, payload, display_image_scale=display_image_scale,
+                                                   save_file=save_file,
+                                                   subfolder=subfolder, display_image=display_image,
+                                                   save_file_folder=save_file_folder,
+                                                   outfile=outfile,
+                                                   debug = debug)
+                                print(
+                                    f"Artist: '{artist}' Second Artist: '{second_artist}' Model Name: '{model_name}' Picture Count: {pictures} Training Steps: {training_steps}\nSampler: '{sampler}' Steps: {payload['steps']} Seed: {payload['seed']}")
+    print("done")
+    pprint(combos_done)
 
 def initialise(seed, prompt, negative_prompt, steps, samplers=None):
     """
